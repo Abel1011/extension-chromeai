@@ -226,6 +226,73 @@ body.app {
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
+.translation-panel {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: 12px;
+  border: 2px solid var(--primary-200);
+}
+
+.translation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.translation-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.language-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.lang-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.lang-checkbox:hover {
+  background: var(--primary-50);
+  transform: translateY(-1px);
+}
+
+.lang-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.translation-status {
+  margin-top: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--gray-700);
+  min-height: 40px;
+  display: none;
+}
+
+.translation-status.active {
+  display: block;
+}
+
 /* ===== BUTTONS ===== */
 .btn {
   appearance: none;

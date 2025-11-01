@@ -6,14 +6,18 @@ const enhanceBtn = document.getElementById('enhanceBtn');
 const exportBtn = document.getElementById('exportBtn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
+const translateBtn = document.getElementById('translateBtn');
+const applyTranslateBtn = document.getElementById('applyTranslateBtn');
+const translationPanel = document.getElementById('translationPanel');
+const translationStatus = document.getElementById('translationStatus');
 const copyBtn = document.getElementById('copyBtn');
 const output = document.getElementById('output');
 const stepCountEl = document.getElementById('stepCount');
 const stepsContainer = document.getElementById('steps');
 const contextInput = document.getElementById('contextInput');
 
-const STEP_SYSTEM_PROMPT = 'You generate concise, professional documentation steps for SaaS tutorials based on screenshots and context. Reply with one sentence in English per step.';
-const ARTICLE_SYSTEM_PROMPT = 'You are a senior technical writer. Given a sequence of recorded steps, respond with JSON containing title, introduction, rewritten step descriptions, and any quality issues such as repeated or missing steps. Keep the tone instructional and concise.';
+const STEP_SYSTEM_PROMPT = 'You generate concise, professional documentation steps for SaaS tutorials based on screenshots and context. ALWAYS write in English, even if the screenshots contain text in other languages. Reply with one clear sentence per step.';
+const ARTICLE_SYSTEM_PROMPT = 'You are a senior technical writer. Given a sequence of recorded steps, respond with JSON containing title, introduction, rewritten step descriptions, and any quality issues such as repeated or missing steps. ALWAYS write in English regardless of the language in the screenshots. Keep the tone instructional and concise.';
 
 const BUTTON_COPY = {
   startIdle: { emoji: '⏺️', text: 'Start Recording', disabled: false },
@@ -786,6 +790,211 @@ function applyButton(button, key) {
 }
 
 updateStateView();
+
+if (translateBtn) {
+  translateBtn.addEventListener('click', () => {
+    const isVisible = translationPanel.style.display !== 'none';
+    translationPanel.style.display = isVisible ? 'none' : 'block';
+  });
+}
+
+if (applyTranslateBtn) {
+  applyTranslateBtn.addEventListener('click', async () => {
+    const checkboxes = translationPanel.querySelectorAll('input[type="checkbox"]:checked');
+    const languages = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (languages.length === 0) {
+      showToast('❌ Please select at least one language');
+      return;
+    }
+    
+    const markdown = output.value;
+    if (!markdown || markdown.trim().length === 0) {
+      showToast('❌ No content to translate. Generate documentation first.');
+      return;
+    }
+    
+    applyTranslateBtn.disabled = true;
+    applyTranslateBtn.innerHTML = '<span class="btn-emoji">⏳</span><span>Translating...</span>';
+    translationStatus.classList.add('active');
+    translationStatus.innerHTML = '🔄 Starting translation...';
+    
+    const languageNames = {
+      es: 'Spanish', fr: 'French', de: 'German',
+      it: 'Italian', pt: 'Portuguese', ja: 'Japanese'
+    };
+    
+    const translations = {};
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const lang of languages) {
+      translationStatus.innerHTML = `🔄 Translating to ${languageNames[lang]}...`;
+      
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: 'translate_markdown',
+          markdown,
+          targetLanguage: lang,
+          languageName: languageNames[lang]
+        });
+        
+        if (result?.ok && result?.translated) {
+          translations[lang] = {
+            language: languageNames[lang],
+            markdown: result.translated,
+            timestamp: Date.now()
+          };
+          successCount++;
+          translationStatus.innerHTML = `✅ ${languageNames[lang]} completed! (${successCount}/${languages.length})`;
+          await new Promise(r => setTimeout(r, 500));
+        } else {
+          const errorMsg = result?.error || 'Translation failed';
+          console.error(`Translation error for ${languageNames[lang]}:`, errorMsg);
+          failCount++;
+          translationStatus.innerHTML = `❌ ${languageNames[lang]} failed: ${errorMsg}`;
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      } catch (error) {
+        console.error(`Translation to ${languageNames[lang]} failed:`, error);
+        failCount++;
+        translationStatus.innerHTML = `❌ ${languageNames[lang]} failed: ${error.message}`;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+    
+    if (successCount > 0) {
+      await chrome.storage.local.set({ translations });
+      translationStatus.innerHTML = `✅ ${successCount} translation(s) saved! ${failCount > 0 ? `(${failCount} failed)` : ''} Click "View Translations" to see them.`;
+      renderTranslations();
+    } else {
+      translationStatus.innerHTML = `❌ All ${failCount} translation(s) failed. Check console for details.`;
+    }
+    
+    applyTranslateBtn.disabled = false;
+    applyTranslateBtn.innerHTML = '<span class="btn-emoji">✨</span><span>Translate Documentation</span>';
+  });
+}
+
+async function renderTranslations() {
+  const data = await chrome.storage.local.get('translations');
+  const translations = data.translations || {};
+  const langCount = Object.keys(translations).length;
+  
+  if (langCount > 0) {
+    translationStatus.classList.add('active');
+    translationStatus.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>📚 ${langCount} translation(s) available</span>
+        <button id="viewTranslationsBtn" style="background: var(--primary-500); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">
+          View Translations
+        </button>
+      </div>
+    `;
+    
+    document.getElementById('viewTranslationsBtn')?.addEventListener('click', () => {
+      showTranslationsModal(translations);
+    });
+  }
+}
+
+function showTranslationsModal(translations) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  const flags = {
+    es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪',
+    it: '🇮🇹', pt: '🇵🇹', ja: '🇯🇵'
+  };
+  
+  let html = '<h2 style="margin-bottom: 16px; color: #111827;">🌍 Available Translations</h2>';
+  
+  for (const [code, data] of Object.entries(translations)) {
+    html += `
+      <div style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="color: #374151;">${flags[code] || '🌍'} ${data.language}</strong>
+          <div style="display: flex; gap: 8px;">
+            <button class="copy-trans-btn" data-code="${code}" style="background: #6366f1; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+              📋 Copy
+            </button>
+            <button class="download-trans-btn" data-code="${code}" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+              💾 Download
+            </button>
+          </div>
+        </div>
+        <div style="font-size: 12px; color: #6b7280;">
+          ${new Date(data.timestamp).toLocaleString()}
+        </div>
+      </div>
+    `;
+  }
+  
+  html += `
+    <button id="closeModalBtn" style="width: 100%; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 16px;">
+      Close
+    </button>
+  `;
+  
+  content.innerHTML = html;
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  document.getElementById('closeModalBtn').addEventListener('click', () => modal.remove());
+  
+  content.querySelectorAll('.copy-trans-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.dataset.code;
+      const markdown = translations[code].markdown;
+      await navigator.clipboard.writeText(markdown);
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.innerHTML = '📋 Copy', 2000);
+    });
+  });
+  
+  content.querySelectorAll('.download-trans-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.code;
+      const data = translations[code];
+      const blob = new Blob([data.markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `docuflow-${data.language.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  });
+}
+
+renderTranslations();
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.sessions || changes.currentSessionId)) {

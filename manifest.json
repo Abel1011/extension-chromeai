@@ -8,8 +8,7 @@
     "activeTab",
     "storage",
     "scripting",
-    "offscreen",
-    "aiLanguageModelOriginTrial"
+    "offscreen"
   ],
   "host_permissions": [
     "<all_urls>"

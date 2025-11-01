@@ -160,6 +160,15 @@
     if (isTextual(t)) capture(commonMeta('input', t));
   }
 
+  function onKeyDown(e) {
+    if (!recording) return;
+    const t = e.target;
+    if (isInOverlay(t)) return;
+    if (e.key === 'Enter' && isTextual(t)) {
+      capture(commonMeta('input:enter', t));
+    }
+  }
+
   function isTextual(el) {
     if (!el) return false;
     const tag = el.tagName?.toLowerCase();
@@ -172,6 +181,7 @@
   // Attach event listeners
   window.addEventListener('click', onClick, true);
   window.addEventListener('blur', onBlur, true);
+  window.addEventListener('keydown', onKeyDown, true);
 
   // initial
   refreshState();

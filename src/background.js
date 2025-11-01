@@ -374,12 +374,6 @@ async function buildMarkdown() {
     lines.push(`${session.articleIntroduction}\n`);
   }
 
-  if (session.articleContext) {
-    lines.push('## Additional Context');
-    lines.push(session.articleContext);
-    lines.push('');
-  }
-
   const issues = Array.isArray(session.articleIssues) ? session.articleIssues.filter((issue) => issue && (issue.message || typeof issue === 'string')) : [];
   if (issues.length) {
     lines.push('## Quality Review');
@@ -410,17 +404,15 @@ async function buildMarkdown() {
 async function ensureOffscreen(action) {
   try {
     const exists = await chrome.offscreen.hasDocument?.();
-    if (action === 'warmup') {
-      if (!exists) {
-        await chrome.offscreen.createDocument({
-          url: 'src/offscreen.html',
-          reasons: ['AUDIO_PLAYBACK'],
-          justification: 'Run AI captions and optionally record mic audio'
-        });
-      }
+    if (!exists) {
+      await chrome.offscreen.createDocument({
+        url: 'src/offscreen.html',
+        reasons: ['AUDIO_PLAYBACK'],
+        justification: 'Run AI captions, translations, and optionally record mic audio'
+      });
     }
   } catch (e) {
-    // ignore if offscreen not available
+    console.error('Failed to create offscreen document:', e);
   }
 }
 
@@ -468,8 +460,9 @@ async function translateMarkdown(markdown, targetLang, languageName) {
     languageName
   });
   
-  if (!response?.translated) {
-    throw new Error('Translation failed');
+  if (!response?.ok || !response?.translated) {
+    const errorMsg = response?.error || 'Translation failed - no response';
+    throw new Error(errorMsg);
   }
   
   return response.translated;

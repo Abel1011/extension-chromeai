@@ -50,23 +50,69 @@
               <span class="btn-emoji">🧠</span>
               <span>Build Article with AI</span>
             </button>
+            <button id="translateBtn" class="btn btn-secondary">
+              <span class="btn-emoji">🌍</span>
+              <span>Translate</span>
+            </button>
+          </div>
+          <div class="control-row" style="margin-top: 12px;">
             <button id="exportBtn" class="btn btn-accent">
               <span class="btn-emoji">📄</span>
               <span>Export Markdown</span>
             </button>
-          </div>
-          <div class="control-row" style="margin-top: 12px;">
             <button id="exportPdfBtn" class="btn btn-secondary">
               <span class="btn-emoji">✏️</span>
               <span>Open Editor</span>
             </button>
+          </div>
+          <div class="control-row" style="margin-top: 12px;">
             <button id="clearAllBtn" class="btn btn-danger">
               <span class="btn-emoji">🗑️</span>
               <span>Clear All</span>
             </button>
           </div>
         </div>
+
+        <div id="translationPanel" class="translation-panel" style="display: none;">
+          <div class="translation-header">
+            <span class="section-emoji">🌍</span>
+            <h4>Select Languages</h4>
+          </div>
+          <div class="language-grid">
+            <label class="lang-checkbox">
+              <input type="checkbox" value="es" />
+              <span>🇪🇸 Spanish</span>
+            </label>
+            <label class="lang-checkbox">
+              <input type="checkbox" value="fr" />
+              <span>🇫🇷 French</span>
+            </label>
+            <label class="lang-checkbox">
+              <input type="checkbox" value="de" />
+              <span>🇩🇪 German</span>
+            </label>
+            <label class="lang-checkbox">
+              <input type="checkbox" value="it" />
+              <span>🇮🇹 Italian</span>
+            </label>
+            <label class="lang-checkbox">
+              <input type="checkbox" value="pt" />
+              <span>🇵🇹 Portuguese</span>
+            </label>
+            <label class="lang-checkbox">
+              <input type="checkbox" value="ja" />
+              <span>🇯🇵 Japanese</span>
+            </label>
+          </div>
+          <button id="applyTranslateBtn" class="btn btn-primary" style="margin-top: 12px;">
+            <span class="btn-emoji">✨</span>
+            <span>Translate Documentation</span>
+          </button>
+          <div id="translationStatus" class="translation-status"></div>
+        </div>
       </div>
+
+      <div class="divider"></div>
 
       <div class="context-section">
         <label for="contextInput" class="context-label">

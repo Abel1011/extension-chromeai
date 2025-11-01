@@ -149,9 +149,9 @@ async function describeImage(dataUrl, contextText) {
     const can = await self.ai.canCreateTextSession?.();
     if (can && can.available === 'no') return null;
     const session = await self.ai.createTextSession({
-      systemPrompt: 'You generate concise, professional documentation steps for SaaS tutorials using screenshots and context. Respond with one sentence per step in English.'
+      systemPrompt: 'You generate concise, professional documentation steps for SaaS tutorials using screenshots and context. ALWAYS respond in English, regardless of the language in the image. Output only one clear sentence per step.'
     });
-    const prompt = `Analyze the capture and craft one clear sentence describing the user action. Context: ${contextText || ''}. Image (data URL, truncated): ${dataUrl.slice(0, 256)}...`;
+    const prompt = `Analyze this screenshot and describe the user action in ONE clear English sentence. Even if the image contains text in another language, your description must be in English. Context: ${contextText || ''}. Image (data URL, truncated): ${dataUrl.slice(0, 256)}...`;
     const res = await session.prompt(prompt);
     return String(res).trim();
   } catch (e) {
@@ -161,32 +161,45 @@ async function describeImage(dataUrl, contextText) {
 
 async function translateText(markdown, targetLang, languageName) {
   try {
-    if (!self.translation?.canTranslate) {
-      throw new Error('Translation API not available');
+    console.log(`Translating to ${languageName} using Prompt API`);
+    
+    if (!self.ai) {
+      throw new Error('Chrome AI not available. Please enable Gemini Nano.');
     }
     
-    const availability = await self.translation.canTranslate({
-      sourceLanguage: 'en',
-      targetLanguage: targetLang
+    if (!self.ai.createTextSession) {
+      throw new Error('AI text session not supported. Update Chrome to latest version.');
+    }
+    
+    const can = await self.ai.canCreateTextSession?.();
+    console.log('AI availability:', can);
+    
+    if (can && can.available === 'no') {
+      throw new Error('AI model not available. Enable Gemini Nano in chrome://flags');
+    }
+    
+    if (can && can.available === 'after-download') {
+      throw new Error('AI model needs to download. Wait a few minutes and try again.');
+    }
+    
+    const session = await self.ai.createTextSession({
+      systemPrompt: `You are a professional translator. Translate documentation markdown from English to ${languageName}. Preserve all markdown formatting, links, and image references exactly. Output only the translated markdown without explanations or additional text.`
     });
     
-    if (availability === 'no') {
-      throw new Error(`Translation to ${languageName} not available`);
+    if (!session) {
+      throw new Error('Failed to create AI session');
     }
     
-    const translator = await self.translation.createTranslator({
-      sourceLanguage: 'en',
-      targetLanguage: targetLang
-    });
+    const prompt = `Translate the following markdown documentation to ${languageName}. Keep all markdown syntax, image links, and structure identical:\n\n${markdown}`;
     
-    if (availability === 'after-download') {
-      translator.addEventListener('downloadprogress', (e) => {
-        console.log(`Translation model download: ${e.loaded}/${e.total}`);
-      });
-      await translator.ready;
+    const res = await session.prompt(prompt);
+    const translated = String(res).trim();
+    
+    if (!translated) {
+      throw new Error('AI returned empty response');
     }
     
-    const translated = await translator.translate(markdown);
+    console.log(`Translation to ${languageName} successful (${translated.length} chars)`);
     return translated;
   } catch (e) {
     console.error('Translation failed:', e);
