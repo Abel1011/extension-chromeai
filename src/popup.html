@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DocuFlow AI</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="app">
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          <span class="logo-icon">📝</span>
+          <div>
+            <h1 class="title">DocuFlow AI</h1>
+            <p class="subtitle">Smart Documentation</p>
+          </div>
+        </div>
+        <div id="status" class="status-badge">
+          <span class="status-dot"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="control-section">
+          <div class="recording-controls">
+            <div class="control-row">
+              <button id="startBtn" class="btn btn-primary btn-large">
+                <span class="btn-emoji">⏺️</span>
+                <span>Start Recording</span>
+              </button>
+              <button id="stopBtn" class="btn btn-danger btn-large" disabled>
+                <span class="btn-emoji">⏹️</span>
+                <span>Stop</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="control-section">
+          <div class="section-header">
+            <span class="section-emoji">✨</span>
+            <h3>AI Tools</h3>
+          </div>
+          <div class="control-row">
+            <button id="enhanceBtn" class="btn btn-secondary">
+              <span class="btn-emoji">🧠</span>
+              <span>Build Article with AI</span>
+            </button>
+            <button id="exportBtn" class="btn btn-accent">
+              <span class="btn-emoji">📄</span>
+              <span>Export Markdown</span>
+            </button>
+          </div>
+          <div class="control-row" style="margin-top: 12px;">
+            <button id="exportPdfBtn" class="btn btn-secondary">
+              <span class="btn-emoji">✏️</span>
+              <span>Open Editor</span>
+            </button>
+            <button id="clearAllBtn" class="btn btn-danger">
+              <span class="btn-emoji">🗑️</span>
+              <span>Clear All</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="context-section">
+        <label for="contextInput" class="context-label">
+          <span class="context-emoji">🧩</span>
+          <span>Context (optional)</span>
+        </label>
+        <textarea
+          id="contextInput"
+          class="context-input"
+          placeholder="Add extra background or goals for the AI..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="output-section">
+        <div class="output-header">
+          <label for="output" class="output-label">
+            <span class="output-emoji">📝</span>
+            Generated Markdown
+          </label>
+          <button id="copyBtn" class="icon-btn" title="Copy to clipboard">
+            <span class="copy-emoji">📋</span>
+          </button>
+        </div>
+  <textarea id="output" class="output" placeholder="Generated markdown will appear here...&#10;&#10;1. Click 'Start Recording'&#10;2. Perform actions in your SaaS&#10;3. Use 'Build Article with AI' for automatic content&#10;4. Export your documentation"></textarea>
+      </div>
+
+      <div class="steps-section">
+        <div class="steps-header">
+          <h2 class="steps-title">
+            <span class="steps-emoji">📸</span>
+            Captured Steps
+          </h2>
+          <span id="stepCount" class="step-count">0 steps</span>
+        </div>
+        <div id="steps" class="steps-grid"></div>
+      </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

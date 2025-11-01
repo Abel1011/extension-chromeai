@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DocuFlow AI - Editor</title>
+  <link rel="stylesheet" href="viewer.css" />
+</head>
+<body>
+  <div class="viewer-container">
+    <div class="viewer-header">
+      <div class="header-left">
+        <span class="logo-icon">📝</span>
+        <h1 class="title">DocuFlow AI Editor</h1>
+      </div>
+      <div class="header-actions">
+        <button id="translateBtn" class="action-btn" title="Translate to Multiple Languages">
+          <span>🌍</span>
+          <span>Translate</span>
+        </button>
+        <button id="printBtn" class="action-btn" title="Print / Save as PDF">
+          <span>🖨️</span>
+          <span>Print</span>
+        </button>
+        <button id="copyBtn" class="action-btn" title="Copy Markdown">
+          <span>📋</span>
+          <span>Copy</span>
+        </button>
+        <button id="downloadBtn" class="action-btn" title="Download Markdown">
+          <span>💾</span>
+          <span>Download</span>
+        </button>
+      </div>
+    </div>
+    
+    <div id="translationSection" class="translation-section" style="display: none;">
+      <div class="translation-header">
+        <div class="translation-title">
+          <span>🌍</span>
+          <span>Translations</span>
+        </div>
+        <div class="language-selector">
+          <label>
+            <input type="checkbox" value="es" checked /> 🇪🇸 Spanish
+          </label>
+          <label>
+            <input type="checkbox" value="fr" checked /> 🇫🇷 French
+          </label>
+          <label>
+            <input type="checkbox" value="de" checked /> 🇩🇪 German
+          </label>
+          <label>
+            <input type="checkbox" value="it" checked /> 🇮🇹 Italian
+          </label>
+          <label>
+            <input type="checkbox" value="pt" checked /> 🇵🇹 Portuguese
+          </label>
+          <label>
+            <input type="checkbox" value="ja" checked /> 🇯🇵 Japanese
+          </label>
+          <label>
+            <input type="checkbox" value="zh" checked /> 🇨🇳 Chinese
+          </label>
+        </div>
+        <button id="startTranslateBtn" class="translate-start-btn">Start Translation</button>
+      </div>
+      <div id="translationResults" class="translation-results"></div>
+    </div>
+    
+    <div class="viewer-content">
+      <div class="editor-panel">
+        <div class="panel-header">
+          <span class="panel-icon">✏️</span>
+          <span class="panel-title">Markdown Editor</span>
+        </div>
+        <textarea id="markdownEditor" class="markdown-input" placeholder="Your markdown content will appear here..."></textarea>
+      </div>
+      
+      <div class="preview-panel">
+        <div class="panel-header">
+          <span class="panel-icon">👁️</span>
+          <span class="panel-title">Preview</span>
+        </div>
+        <div id="markdownPreview" class="markdown-preview"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

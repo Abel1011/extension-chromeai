@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "DocuFlow AI",
+  "version": "1.0.0",
+  "description": "Create professional documentation from any workflow automatically. Powered by Chrome's built-in AI with multi-language support.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage",
+    "scripting",
+    "offscreen",
+    "aiLanguageModelOriginTrial"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "DocuFlow AI - Smart Documentation",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon.ico",
+      "32": "icons/icon.ico",
+      "48": "icons/icon.ico",
+      "128": "icons/icon.ico"
+    }
+  },
+  "icons": {
+    "16": "icons/icon.ico",
+    "32": "icons/icon.ico",
+    "48": "icons/icon.ico",
+    "128": "icons/icon.ico"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/overlay.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
