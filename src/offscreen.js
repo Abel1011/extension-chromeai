@@ -93,12 +93,12 @@ async function transcribeAudio() {
 }
 
 // Ask the prompt API to process a text instruction.
-async function runTextPrompt(prompt, systemPrompt) {
+async function runTextPrompt(prompt, systemPrompt, outputLanguage = 'en') {
   try {
     if (globalThis.LanguageModel?.create) {
       const session = await globalThis.LanguageModel.create({
         expectedInputs: [{ type: 'text', languages: ['en'] }],
-        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+        expectedOutputs: [{ type: 'text', languages: [outputLanguage || 'en'] }],
         initialPrompts: [{ role: 'system', content: systemPrompt }]
       }).catch((error) => {
         console.error('LanguageModel.create failed', error);
@@ -160,49 +160,68 @@ async function describeImage(dataUrl, contextText) {
 }
 
 async function translateText(markdown, targetLang, languageName) {
-  try {
-    console.log(`Translating to ${languageName} using Prompt API`);
-    
-    if (!self.ai) {
-      throw new Error('Chrome AI not available. Please enable Gemini Nano.');
-    }
-    
-    if (!self.ai.createTextSession) {
-      throw new Error('AI text session not supported. Update Chrome to latest version.');
-    }
-    
-    const can = await self.ai.canCreateTextSession?.();
-    console.log('AI availability:', can);
-    
-    if (can && can.available === 'no') {
-      throw new Error('AI model not available. Enable Gemini Nano in chrome://flags');
-    }
-    
-    if (can && can.available === 'after-download') {
-      throw new Error('AI model needs to download. Wait a few minutes and try again.');
-    }
-    
-    const session = await self.ai.createTextSession({
-      systemPrompt: `You are a professional translator. Translate documentation markdown from English to ${languageName}. Preserve all markdown formatting, links, and image references exactly. Output only the translated markdown without explanations or additional text.`
-    });
-    
-    if (!session) {
-      throw new Error('Failed to create AI session');
-    }
-    
-    const prompt = `Translate the following markdown documentation to ${languageName}. Keep all markdown syntax, image links, and structure identical:\n\n${markdown}`;
-    
-    const res = await session.prompt(prompt);
-    const translated = String(res).trim();
-    
-    if (!translated) {
-      throw new Error('AI returned empty response');
-    }
-    
-    console.log(`Translation to ${languageName} successful (${translated.length} chars)`);
-    return translated;
-  } catch (e) {
-    console.error('Translation failed:', e);
-    throw e;
+  if (!markdown || !markdown.trim()) {
+    throw new Error('Nothing to translate');
   }
+
+  const { sanitizedMarkdown, placeholders } = stripImageDataUrls(markdown);
+
+  const prompt = [
+    `Translate the following markdown documentation to ${languageName}.`,
+    'Preserve every markdown tag, link, code block, and image reference exactly as-is.',
+    'Image URLs may include tokens like IMAGE_PLACEHOLDER_0; keep those tokens untouched.',
+    'Do not add commentary or metadata. Return only the translated markdown.',
+    '',
+    sanitizedMarkdown
+  ].join('\n');
+
+  const systemPrompt = `You are a professional technical translator. Translate documentation from English to ${languageName}. ALWAYS keep markdown structure untouched (headers, lists, code fences, images, links). If a term has no translation, keep the English term. Respond only with the translated markdown.`;
+
+  const translated = await runTextPrompt(prompt, systemPrompt, targetLang).catch((error) => {
+    console.warn('Translation prompt failed:', error);
+    return '';
+  });
+
+  if (translated && translated.trim()) {
+    return restoreImageDataUrls(translated.trim(), placeholders);
+  }
+
+  throw new Error('Chrome AI not available. Please enable Gemini Nano.');
+}
+
+// Removes inline data URLs and replaces them with stable placeholders to avoid token overload.
+function stripImageDataUrls(markdown) {
+  const placeholders = [];
+  let index = 0;
+  const sanitizedMarkdown = markdown.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/gi, (match, alt, url) => {
+    const token = `IMAGE_PLACEHOLDER_${index++}`;
+    placeholders.push({ token, url });
+    const safeAlt = typeof alt === 'string' ? alt : '';
+    return `![${safeAlt}](${token})`;
+  });
+  return { sanitizedMarkdown, placeholders };
+}
+
+// Restores original data URLs after the translation finishes.
+function restoreImageDataUrls(markdown, placeholders) {
+  if (!Array.isArray(placeholders) || !placeholders.length) {
+    return markdown;
+  }
+  let output = markdown;
+  placeholders.forEach(({ token, url }) => {
+    const escaped = escapeRegExp(token);
+    const patterns = [
+      new RegExp(`!\\[([^\]]*)\\]\\s*\\(\\s*${escaped}\\s*\\)`, 'gi'),
+      new RegExp(`!\\[([^\]]*)\\]\\s*\\(\\s*"${escaped}"\\s*\\)`, 'gi'),
+      new RegExp(`!\\[([^\]]*)\\]\\s*\\(\\s*'${escaped}'\\s*\\)`, 'gi')
+    ];
+    patterns.forEach((pattern) => {
+      output = output.replace(pattern, (match, alt) => `![${alt}](${url})`);
+    });
+  });
+  return output;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

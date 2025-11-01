@@ -3,13 +3,47 @@ const markdownPreview = document.getElementById('markdownPreview');
 const printBtn = document.getElementById('printBtn');
 const copyBtn = document.getElementById('copyBtn');
 const downloadBtn = document.getElementById('downloadBtn');
+const titleEl = document.querySelector('.title');
+
+const params = new URLSearchParams(window.location.search);
+const translationLang = params.get('lang');
+let translationMode = false;
+let translationLabel = '';
+const defaultTitle = 'DocuFlow AI Editor';
 
 async function loadMarkdown() {
   try {
+    if (!translationLang) {
+      translationMode = false;
+      translationLabel = '';
+      updateViewerTitle();
+    }
+
+    if (translationLang) {
+      const data = await chrome.storage.local.get(['translations']);
+      const translations = data?.translations || {};
+      const entry = translations[translationLang];
+      if (entry?.markdown) {
+        translationMode = true;
+        translationLabel = entry.language || translationLang.toUpperCase();
+        updateViewerTitle();
+        markdownEditor.value = entry.markdown;
+        updatePreview();
+        return;
+      }
+      translationMode = true;
+      translationLabel = translationLang.toUpperCase();
+      updateViewerTitle();
+      markdownEditor.value = '# Translation unavailable\n\nUnable to load the requested translation. Generate it again from the popup.';
+      updatePreview();
+      return;
+    }
+
     const result = await chrome.runtime.sendMessage({ type: 'generate_markdown' });
     if (result?.markdown) {
       markdownEditor.value = result.markdown;
       updatePreview();
+      return;
     }
   } catch (error) {
     console.error('Failed to load markdown', error);
@@ -21,6 +55,19 @@ async function loadMarkdown() {
 function updatePreview() {
   const markdown = markdownEditor.value;
   markdownPreview.innerHTML = parseMarkdown(markdown);
+}
+
+function updateViewerTitle() {
+  if (!titleEl) return;
+  if (translationMode) {
+    const label = translationLabel || 'Translation';
+    const titleText = `DocuFlow Translation · ${label}`;
+    titleEl.textContent = titleText;
+    document.title = titleText;
+  } else {
+    titleEl.textContent = defaultTitle;
+    document.title = defaultTitle;
+  }
 }
 
 function parseMarkdown(markdown) {
@@ -123,7 +170,11 @@ if (downloadBtn) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `docuflow-${new Date().toISOString().slice(0, 10)}.md`;
+    const date = new Date().toISOString().slice(0, 10);
+    const suffix = translationMode && translationLabel
+      ? `-${translationLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+      : '';
+    a.download = `docuflow${suffix}-${date}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -127,7 +127,10 @@
     };
   }
 
-  async function capture(meta) {
+  async function capture(meta, delay = 0) {
+    if (delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
     const wasVisible = overlay && overlay.style.display !== 'none';
     if (wasVisible) {
       overlay.style.display = 'none';
@@ -150,7 +153,7 @@
     if (isInOverlay(t)) return;
     const meta = commonMeta('click', t);
     meta.point = { x: e.clientX, y: e.clientY };
-    capture(meta);
+    capture(meta, 250);
   }
 
   function onBlur(e) {

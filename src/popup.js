@@ -804,13 +804,13 @@ if (applyTranslateBtn) {
     const languages = Array.from(checkboxes).map(cb => cb.value);
     
     if (languages.length === 0) {
-      showToast('❌ Please select at least one language');
+      showNotification('❌ Please select at least one language', 'warning');
       return;
     }
     
     const markdown = output.value;
     if (!markdown || markdown.trim().length === 0) {
-      showToast('❌ No content to translate. Generate documentation first.');
+      showNotification('❌ No content to translate. Generate documentation first.', 'warning');
       return;
     }
     
@@ -938,6 +938,9 @@ function showTranslationsModal(translations) {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <strong style="color: #374151;">${flags[code] || '🌍'} ${data.language}</strong>
           <div style="display: flex; gap: 8px;">
+            <button class="open-trans-btn" data-code="${code}" style="background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+              🔗 Open
+            </button>
             <button class="copy-trans-btn" data-code="${code}" style="background: #6366f1; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
               📋 Copy
             </button>
@@ -990,6 +993,15 @@ function showTranslationsModal(translations) {
       a.download = `docuflow-${data.language.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+  });
+
+  content.querySelectorAll('.open-trans-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.dataset.code;
+      const baseUrl = chrome.runtime.getURL('src/viewer.html');
+      const url = `${baseUrl}?lang=${encodeURIComponent(code)}`;
+      await chrome.tabs.create({ url, active: true });
     });
   });
 }
