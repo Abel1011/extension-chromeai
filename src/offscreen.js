@@ -98,7 +98,7 @@ async function runTextPrompt(prompt, systemPrompt, outputLanguage = 'en') {
     if (globalThis.LanguageModel?.create) {
       const session = await globalThis.LanguageModel.create({
         expectedInputs: [{ type: 'text', languages: ['en'] }],
-        expectedOutputs: [{ type: 'text', languages: [outputLanguage || 'en'] }],
+        expectedOutputs: [{ type: 'text' }],
         initialPrompts: [{ role: 'system', content: systemPrompt }]
       }).catch((error) => {
         console.error('LanguageModel.create failed', error);
