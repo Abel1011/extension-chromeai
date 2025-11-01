@@ -218,6 +218,10 @@ function restoreImageDataUrls(markdown, placeholders) {
     patterns.forEach((pattern) => {
       output = output.replace(pattern, (match, alt) => `![${alt}](${url})`);
     });
+    if (output.includes(token)) {
+      const fallbackPattern = new RegExp(escaped, 'g');
+      output = output.replace(fallbackPattern, url);
+    }
   });
   return output;
 }
